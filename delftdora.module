@@ -231,27 +231,47 @@ function delftdora_model_Person_islandora_ingest_steps() {
 }
 
 /**
- * Implements hook_CMODEL_PID_islandora_object_ingested().
+ * Implements hook_islandora_CMODEL_PID_derivative().
  */
-function delftdora_model_Organization_islandora_object_ingested($object) {
-  module_load_include('inc', 'islandora_basic_image', 'includes/derivatives');
-  islandora_basic_image_create_all_derivatives($object);
+function delftdora_model_person_islandora_derivative() {
+  return delftdora_derivatives();
 }
 
 /**
- * Implements hook_CMODEL_PID_islandora_object_ingested().
+ * Implements hook_islandora_CMODEL_PID_derivative().
  */
-function delftdora_model_Person_islandora_object_ingested($object) {
-  module_load_include('inc', 'islandora_basic_image', 'includes/derivatives');
-  islandora_basic_image_create_all_derivatives($object);
+function delftdora_model_building_islandora_derivative() {
+  return delftdora_derivatives();
 }
 
 /**
- * Implements hook_CMODEL_PID_islandora_object_ingested().
+ * Implements hook_islandora_CMODEL_PID_derivative().
  */
-function delftdora_model_Building_islandora_object_ingested($object) {
-  module_load_include('inc', 'islandora_basic_image', 'includes/derivatives');
-  islandora_basic_image_create_all_derivatives($object);
+function delftdora_model_organization_islandora_derivative() {
+  return delftdora_derivatives();
+}
+
+function delftdora_derivatives() {
+  return array(
+    array(
+      'source_dsid' => 'OBJ',
+      'destination_dsid' => 'TN',
+      'weight' => '0',
+      'function' => array(
+        'islandora_basic_image_create_thumbnail',
+      ),
+      'file' => drupal_get_path('module', 'islandora_basic_image') . '/includes/derivatives.inc',
+    ),
+    array(
+      'source_dsid' => 'OBJ',
+      'destination_dsid' => 'MEDIUM_SIZE',
+      'weight' => '1',
+      'function' => array(
+        'islandora_basic_image_create_medium_size',
+      ),
+      'file' => drupal_get_path('module', 'islandora_basic_image') . '/includes/derivatives.inc',
+    ),
+  );
 }
 
 /**
@@ -288,11 +308,11 @@ function delftdora_process_object($object) {
       $db_object->ingested_pid = $object->id;
 
       db_merge('delftdora_ingested_pids')
-        ->key(array('ingested_pid' => $object->id))
-        ->fields(array(
-          'processed' => NULL,
-        ))
-        ->execute();
+          ->key(array('ingested_pid' => $object->id))
+          ->fields(array(
+            'processed' => NULL,
+          ))
+          ->execute();
       break;
     }
   }
@@ -309,7 +329,7 @@ function delftdora_islandora_object_ingested($object) {
  * Implements hook_islandora_datastream_alter().
  */
 function delftdora_islandora_datastream_alter($object, $datastream, &$context) {
-  if ($context['action'] == 'modify' || $context['action'] == 'ingest') {
+  if (($context['action'] == 'modify' || $context['action'] == 'ingest') && islandora_object_load($object->id)) {
     delftdora_process_object($object);
   }
 }
@@ -320,18 +340,18 @@ function delftdora_islandora_datastream_alter($object, $datastream, &$context) {
 function delftdora_cron() {
   // Gets all unprocessed pids.
   $pids_to_process = db_select('delftdora_ingested_pids', 'd')
-    ->fields('d', array('ingested_pid'))
-    ->condition('processed', NULL, 'IS')
-    ->execute()
-    ->fetchAllAssoc('ingested_pid');
+      ->fields('d', array('ingested_pid'))
+      ->condition('processed', NULL, 'IS')
+      ->execute()
+      ->fetchAllAssoc('ingested_pid');
 
   foreach ($pids_to_process as $pid) {
     $pid = $pid->ingested_pid;
     $result = delftdora_batch_modify($pid);
     if ($result) {
       $num_deleted = db_delete('delftdora_ingested_pids')
-        ->condition('ingested_pid', $pid)
-        ->execute();
+          ->condition('ingested_pid', $pid)
+          ->execute();
     }
   }
 }
@@ -383,8 +403,7 @@ function delftdora_batch_modify($pid) {
         file_delete($disseminator_file);
         if (empty($output)) {
           $return = FALSE;
-          watchdog('delft', 'Error running batchModify for @pid with @disseminator',
-            array('@pid' => $pid, '@disseminator' => $bm_model['sdef'] . '/' . $bm_model['method'])
+          watchdog('delft', 'Error running batchModify for @pid with @disseminator', array('@pid' => $pid, '@disseminator' => $bm_model['sdef'] . '/' . $bm_model['method'])
           );
         }
       }
