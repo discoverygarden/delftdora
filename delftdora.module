@@ -282,7 +282,7 @@ function delftdora_derivatives() {
  */
 function delftdora_process_object($object) {
   // Handle RELS-EXT replacement.
-  if (get_class($object) == 'IslandoraFedoraObject') {
+  if ($object instanceof FedoraObject) {
     $content_models = array();
     $rels = $object->relationships->get(FEDORA_MODEL_URI, 'hasModel');
     foreach ($rels as $rel) {
@@ -309,11 +309,11 @@ function delftdora_process_object($object) {
         $db_object->ingested_pid = $object->id;
 
         db_merge('delftdora_ingested_pids')
-            ->key(array('ingested_pid' => $object->id))
-            ->fields(array(
-              'processed' => NULL,
-            ))
-            ->execute();
+          ->key(array('ingested_pid' => $object->id))
+          ->fields(array(
+            'processed' => NULL,
+          ))
+          ->execute();
         break;
       }
     }
@@ -342,18 +342,18 @@ function delftdora_islandora_datastream_alter($object, $datastream, &$context) {
 function delftdora_cron() {
   // Gets all unprocessed pids.
   $pids_to_process = db_select('delftdora_ingested_pids', 'd')
-      ->fields('d', array('ingested_pid'))
-      ->condition('processed', NULL, 'IS')
-      ->execute()
-      ->fetchAllAssoc('ingested_pid');
+    ->fields('d', array('ingested_pid'))
+    ->condition('processed', NULL, 'IS')
+    ->execute()
+    ->fetchAllAssoc('ingested_pid');
 
   foreach ($pids_to_process as $pid) {
     $pid = $pid->ingested_pid;
     $result = delftdora_batch_modify($pid);
     if ($result) {
       $num_deleted = db_delete('delftdora_ingested_pids')
-          ->condition('ingested_pid', $pid)
-          ->execute();
+        ->condition('ingested_pid', $pid)
+        ->execute();
     }
   }
 }
