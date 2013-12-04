@@ -282,38 +282,40 @@ function delftdora_derivatives() {
  */
 function delftdora_process_object($object) {
   // Handle RELS-EXT replacement.
-  $content_models = array();
-  $rels = $object->relationships->get(FEDORA_MODEL_URI, 'hasModel');
-  foreach ($rels as $rel) {
-    $content_models[] = $rel['object']['value'];
-  }
-  $targets = variable_get('delftdora_rels_content_models', array());
-  $shared = array_intersect($content_models, $targets);
-
-  if (count($shared) > 0) {
-    $fedora_url = variable_get('islandora_base_url', 'http://localhost:8080/fedora');
-    $pid = $object->id;
-    $sdef_url = "$fedora_url/objects/$pid/methods/sdef:makeDS/RELS-EXT";
-    $new_rels = file_get_contents($sdef_url);
-    if ($new_rels) {
-      $object['RELS-EXT']->content = $new_rels;
+  if (get_class($object) == 'IslandoraFedoraObject') {
+    $content_models = array();
+    $rels = $object->relationships->get(FEDORA_MODEL_URI, 'hasModel');
+    foreach ($rels as $rel) {
+      $content_models[] = $rel['object']['value'];
     }
-  }
+    $targets = variable_get('delftdora_rels_content_models', array());
+    $shared = array_intersect($content_models, $targets);
 
-  // Handle batchModify cron setup.
-  $batch_modify_cmodels = variable_get('delft_batch_modify_cmodels', array());
-  foreach ($batch_modify_cmodels as $bm_model) {
-    if (in_array($bm_model['cmodel'], $content_models)) {
-      $db_object = new stdClass();
-      $db_object->ingested_pid = $object->id;
+    if (count($shared) > 0) {
+      $fedora_url = variable_get('islandora_base_url', 'http://localhost:8080/fedora');
+      $pid = $object->id;
+      $sdef_url = "$fedora_url/objects/$pid/methods/sdef:makeDS/RELS-EXT";
+      $new_rels = file_get_contents($sdef_url);
+      if ($new_rels) {
+        $object['RELS-EXT']->content = $new_rels;
+      }
+    }
 
-      db_merge('delftdora_ingested_pids')
-          ->key(array('ingested_pid' => $object->id))
-          ->fields(array(
-            'processed' => NULL,
-          ))
-          ->execute();
-      break;
+    // Handle batchModify cron setup.
+    $batch_modify_cmodels = variable_get('delft_batch_modify_cmodels', array());
+    foreach ($batch_modify_cmodels as $bm_model) {
+      if (in_array($bm_model['cmodel'], $content_models)) {
+        $db_object = new stdClass();
+        $db_object->ingested_pid = $object->id;
+
+        db_merge('delftdora_ingested_pids')
+            ->key(array('ingested_pid' => $object->id))
+            ->fields(array(
+              'processed' => NULL,
+            ))
+            ->execute();
+        break;
+      }
     }
   }
 }
@@ -329,7 +331,7 @@ function delftdora_islandora_object_ingested($object) {
  * Implements hook_islandora_datastream_alter().
  */
 function delftdora_islandora_datastream_alter($object, $datastream, &$context) {
-  if (($context['action'] == 'modify' || $context['action'] == 'ingest') && islandora_object_load($object->id)) {
+  if (($context['action'] == 'modify' || $context['action'] == 'ingest')) {
     delftdora_process_object($object);
   }
 }
