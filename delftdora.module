@@ -405,8 +405,10 @@ function delftdora_batch_modify($pid) {
         file_delete($disseminator_file);
         if (empty($output)) {
           $return = FALSE;
-          watchdog('delft', 'Error running batchModify for @pid with @disseminator', array('@pid' => $pid, '@disseminator' => $bm_model['sdef'] . '/' . $bm_model['method'])
-          );
+          watchdog('delft', 'Error running batchModify for @pid with @disseminator', array(
+            '@pid' => $pid,
+            '@disseminator' => $bm_model['sdef'] . '/' . $bm_model['method']
+          ));
         }
       }
     }
