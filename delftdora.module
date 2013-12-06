@@ -477,10 +477,3 @@ function delftdora_menu_alter(&$items) {
 function delftdora_form_user_login_alter(&$form, &$form_state) {
   $form['actions']['submit']['#value'] = t('Sign in');
 }
-
-/**
- * Implements hook_form_FORM_ID_alter().
- */
-function delftdora_form_user_register_form_alter(&$form, &$form_state) {
-  $form['actions']['submit']['#value'] = t('Submit');
-}
