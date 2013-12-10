@@ -38,6 +38,7 @@ function delftdora_theme() {
         'solr' => NULL,
         'field' => NULL,
         'options' => array(),
+        'classes' => array(),
       ),
     ),
   );
