@@ -21,7 +21,7 @@
     <?php endforeach; ?>
   </ol>
   <?php if ($show_more): ?>
-  <div class="show-more <?php print implode(' ', $classes); ?>">
+  <div class="show-more <?php print $classes; ?>">
     <strong data-show-text="<?php print $show_text; ?>" data-hide-text="<?php print $hide_text; ?>"><?php print $show_text; ?></strong>
   </div>
   <?php endif; ?>
